@@ -7,7 +7,7 @@ run(update)
 
 const spring = new Spring({
 	position: 0, // start position
-	frequency: 2.5, // oscillations per second (approximate)
+	frequency: 5.5, // oscillations per second (approximate)
 	halfLife: 0.35 // time until amplitude is halved
 })
 const stretch = 0.00005
