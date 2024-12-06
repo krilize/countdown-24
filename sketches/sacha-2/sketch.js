@@ -1,16 +1,13 @@
 import { createEngine } from "../../shared/engine.js";
 
-const { renderer, run, input, finish,math } = createEngine();
+const { renderer, run, input, finish, math } = createEngine();
 const { ctx, canvas } = renderer;
-
 
 // Images des moustiques et des taches de sang
 const mosquitoImageSrc = './image/moustique.png';
 const bloodImageSrc = './image/blood.png';
 const swatterImageSrc = './image/tappette.png';
-
-
-
+const mosquitoSoundSrc = './sound/mosquito_sound.mp3'; // Chemin vers votre son
 
 // Configuration de la taille des taches de sang
 const bloodSize = 300; // Largeur et hauteur des taches de sang
@@ -29,9 +26,13 @@ let animationStarted = false; // Pour contrôler le début de l'animation
 const bloodDisappearanceTime = 3000; // Temps avant que les taches de sang commencent à disparaître
 const bloodFadeSpeed = 0.02; // Vitesse à laquelle les taches de sang disparaissent
 
-const mosquitoImage = await loadImage(mosquitoImageSrc)
-const bloodImage = await loadImage(bloodImageSrc)
-const swatterImage = await loadImage(swatterImageSrc)
+const mosquitoImage = await loadImage(mosquitoImageSrc);
+const bloodImage = await loadImage(bloodImageSrc);
+const swatterImage = await loadImage(swatterImageSrc);
+
+// Charger le son du moustique
+const mosquitoSound = new Audio(mosquitoSoundSrc);
+mosquitoSound.loop = true; // Mettre en boucle le son
 
 // Initialiser les moustiques
 for (let i = 0; i < numParticles; i++) {
@@ -43,9 +44,8 @@ run(update);
 
 // Fonction pour créer les moustiques
 function createParticle() {
-    const size =0.3* Math.random() * (250 - 90) + 90; // Taille aléatoire entre 90 et 250
+    const size = 0.3 * Math.random() * (250 - 90) + 90; // Taille aléatoire entre 90 et 250
     let x, y;
-    console.log(canvas.width)
 
     // Positionner le moustique hors de l'écran
     const side = Math.floor(Math.random() * 4); // 0: gauche, 1: droite, 2: haut, 3: bas
@@ -75,7 +75,7 @@ function createParticle() {
         velocityY: (Math.random() - 0.5) * 30,
         targetX: 0, // Assigné plus tard
         targetY: 0,
-        rotation:0,
+        rotation: 0,
         isSettled: false,
         isExploded: false,
         size: size, // Ajouter une taille aléatoire pour chaque moustique
@@ -86,11 +86,10 @@ function createParticle() {
     };
 }
 
-
 // Définir les positions finales autour de la lettre
 function setupFinalPositions() {
-    const centerX = canvas.width/2; // Centre du canvas
-    const centerY = canvas.height/2;
+    const centerX = canvas.width / 2; // Centre du canvas
+    const centerY = canvas.height / 2;
     const radius = 500; // Rayon autour du centre
 
     for (let i = 0; i < numParticles; i++) {
@@ -112,25 +111,19 @@ function setupFinalPositions() {
 
 // Fonction pour déplacer les moustiques avec un zigzag rapide
 function moveParticleWithZigzag(particle) {
-
     // Ajouter un zigzag
-   // particle.x += (Math.random() - 0.5) * 5; // Ajustez 5 pour l'intensité du zigzag
-    //particle.y += (Math.random() - 0.5) * 5;
-
-    // Si le moustique sort de l'écran, il revient de l'autre côtéReviens en haut
 }
 
 // Fonction pour ralentir les moustiques vers leurs positions finales
 function moveParticleToTarget(particle) {
-    // Définir une vitesse aléatoire pour chaque moustique
     const speed = Math.random() * 0.05 + 0.01; // Vitesse entre 0.01 et 0.06
-    const springForce = 1
-    const damping = 0.01
-    const forceX = (particle.targetX - particle.x)
-    const forceY = (particle.targetY - particle.y)
-    const forceLen = math.len(forceX,forceY)
-    particle.velocityX += forceX/forceLen * springForce - damping*particle.velocityX;
-    particle.velocityY += forceY/forceLen * springForce - damping*particle.velocityY;
+    const springForce = 1;
+    const damping = 0.01;
+    const forceX = (particle.targetX - particle.x);
+    const forceY = (particle.targetY - particle.y);
+    const forceLen = math.len(forceX, forceY);
+    particle.velocityX += forceX / forceLen * springForce - damping * particle.velocityX;
+    particle.velocityY += forceY / forceLen * springForce - damping * particle.velocityY;
 
     // Considérer comme "arrivé" si très proche de la cible
     if (Math.abs(particle.targetX - particle.x) < 1 && Math.abs(particle.targetY - particle.y) < 1) {
@@ -152,6 +145,7 @@ canvas.addEventListener('mousedown', () => {
 canvas.addEventListener('mouseup', () => {
     isMouseDown = false; // Le bouton de la souris est relâché
     pressStartTime = null; // Réinitialiser le temps de début
+    mosquitoSound.pause(); // Arrêter le son lorsque le clic est relâché
 });
 
 canvas.addEventListener('mousemove', (event) => {
@@ -185,6 +179,15 @@ canvas.addEventListener('mousemove', (event) => {
     }
 });
 
+// Vérifie si le son doit être joué
+function checkSound() {
+    const anyMosquitoVisible = particles.some(p => !p.isExploded);
+    if (anyMosquitoVisible && !mosquitoSound.isPlaying) {
+        mosquitoSound.play(); // Jouer le son si un moustique est visible
+    } else if (!anyMosquitoVisible && mosquitoSound.isPlaying) {
+        mosquitoSound.pause(); // Arrêter le son si aucun moustique n'est visible
+    }
+}
 
 let allExploded = false; // Indique si tous les moustiques sont explosés
 let fadeOutStarted = false; // Indique si le fade-out global a commencé
@@ -198,6 +201,7 @@ function update(dt) {
     if (!allExploded && particles.every(p => p.isExploded)) {
         allExploded = true; // Tous les moustiques sont explosés
         fadeOutStarted = true; // Déclenchement du fade-out
+        mosquitoSound.pause(); // Arrêter le son lorsque tous les moustiques explosent
     }
 
     // Dessiner les taches de sang sous la lettre
@@ -226,31 +230,25 @@ function update(dt) {
             particle.velocityX += (Math.random() - 0.5) * 3;
             particle.velocityY += (Math.random() - 0.5) * 3;
             if (!animationStarted) {
-            } 
-            else if (animationState === "settling" ) {
+            } else if (animationState === "settling") {
                 moveParticleToTarget(particle); // Mouvements vers les positions finales
             }
 
-            particle.velocityX *= 0.99
-            particle.velocityY *= 0.99
+            particle.velocityX *= 0.99;
+            particle.velocityY *= 0.99;
             particle.x += particle.velocityX;
             particle.y += particle.velocityY;
-           // if (particle.x < -particle.size) particle.x = canvas.width + particle.size; // Reviens à droite
-          //  if (particle.x > canvas.width + particle.size) particle.x = -particle.size; // Reviens à gauche
-           // if (particle.y < -particle.size) particle.y = canvas.height + particle.size; // Reviens en bas
-           // if (particle.y > canvas.height + particle.size) particle.y = -particle.size; // 
-    
-            const speed = math.len(particle.velocityX,particle.velocityY)
-            if(speed>1)
-            {
-                particle.rotation = Math.atan2(particle.velocityY,particle.velocityX)
+
+            const speed = math.len(particle.velocityX, particle.velocityY);
+            if (speed > 1) {
+                particle.rotation = Math.atan2(particle.velocityY, particle.velocityX);
             }
             // Dessiner le moustique
-            ctx.save()
-            ctx.translate(particle.x , particle.y )
-            ctx.rotate(particle.rotation)
-            ctx.drawImage(mosquitoImage, - particle.size / 2,- particle.size / 2, particle.size, particle.size);
-            ctx.restore()
+            ctx.save();
+            ctx.translate(particle.x, particle.y);
+            ctx.rotate(particle.rotation);
+            ctx.drawImage(mosquitoImage, -particle.size / 2, -particle.size / 2, particle.size, particle.size);
+            ctx.restore();
         }
     });
 
@@ -274,27 +272,22 @@ function update(dt) {
     ctx.scale(0.05, 0.05);
     ctx.drawImage(swatterImage, -swatterImage.width / 2, -swatterImage.height / 2);
 
+    checkSound(); // Vérifie si le son doit être joué
+
     if (fadeOutAlpha === 0) {
-		finish()
-	}
+        finish();
+    }
 }
 
-
-
-async function loadImage(src)
-{
-    return new Promise((resolve,reject)=>{
-
-        const img = new Image()
-        img.src = src
-        img.onload = ()=>{
-    
-            resolve(img)
-        }
-    })
+async function loadImage(src) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = src;
+        img.onload = () => {
+            resolve(img);
+        };
+    });
 }
- 
-
 
 window.addEventListener('resize', () => {
     canvas.width = window.innerWidth;

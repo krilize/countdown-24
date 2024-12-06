@@ -5,10 +5,16 @@ import ParticleSystem from "./ParticleSystem.js";
 const { renderer, input, run, finish } = createEngine();
 const { ctx, canvas } = renderer;
 
-
-const  particleSystem = new ParticleSystem();
-const  pathPoints = await Utils.loadSVG("./3.svg");
+const particleSystem = new ParticleSystem();
+const pathPoints = await Utils.loadSVG("./3.svg");
 calculateOffsets();
+
+// Charger l'image à afficher
+const cursorImage = new Image();
+cursorImage.src = "./image/chainSaw.png"; // Remplacez par le chemin de votre image
+
+// Charger le son
+const clickSound = new Audio('./image/chainsaw.mp3'); // Remplacez par le chemin de votre fichier audio
 
 // Retourne un point aléatoire parmi tous les chemins SVG chargés
 function getRandomPathPoint() {
@@ -25,15 +31,15 @@ function generateParticles() {
     for (let i = 0; i < 3; i++) {
       const targetPoint = getRandomPathPoint();
       particleSystem.addParticle(
-       input.getX(),
+        input.getX(),
         input.getY(),
-        targetPoint.x+canvas.width/2,
-        targetPoint.y+canvas.height/2
+        targetPoint.x + canvas.width / 2,
+        targetPoint.y + canvas.height / 2
       );
     }
+  }
+}
 
-}
-}
 // Calcul des offsets pour centrer la lettre
 function calculateOffsets() {
   if (pathPoints.length === 0) return;
@@ -59,13 +65,14 @@ function calculateOffsets() {
     points.forEach((point) => {
       point.x -= (minX + letterWidth / 2);
       point.y -= (minY + letterHeight / 2);
-    })
+    });
   });
 }
 
-// met à jour leurs positions et les dessine
+// Met à jour leurs positions et les dessine
 let animationEnded = false; // Indique si l'animation est déjà terminée
 let hasStarted = false; // Indique si des particules ont été générées
+let soundPlaying = false; // Indique si le son est déjà en cours de lecture
 
 function update() {
   // Effacer l'écran avec un fond noir
@@ -84,12 +91,31 @@ function update() {
   particleSystem.update();
   particleSystem.draw(ctx);
 
-  // Debugging : vérifier l'état du système
-  // console.log({
-  //   hasStarted,
-  //   particleCount: particleSystem.particles.length,
-  //   animationEnded,
-  // });
+  // Calculer les offsets pour le wiggle
+  let wiggleOffsetX = 0;
+  let wiggleOffsetY = 0;
+
+  if (input.isPressed()) {
+    // Si le bouton de la souris est enfoncé, appliquez un effet de wiggle
+    wiggleOffsetX = (Math.random() - 0.5) * 10; // Variation entre -5 et 5
+    wiggleOffsetY = (Math.random() - 0.5) * 10; // Variation entre -5 et 5
+
+    // Jouer le son si ce n'est pas déjà en cours
+    if (!soundPlaying) {
+      clickSound.currentTime = 0; // Réinitialiser le son à 0
+      clickSound.play();
+      soundPlaying = true; // Marquer le son comme étant en cours de lecture
+    }
+  } else {
+    // Si le clic est relâché, réinitialiser soundPlaying
+    clickSound.pause();
+    clickSound.currentTime = 0;
+    soundPlaying = false; // Réinitialiser lorsque le clic est relâché
+    
+  }
+
+  // Dessiner l'image qui suit le curseur avec l'effet de wiggle
+  ctx.drawImage(cursorImage, input.getX() - cursorImage.width / 3 + wiggleOffsetX, input.getY() - cursorImage.height / 1.5 + wiggleOffsetY);
 
   // Terminer l'animation uniquement si elle a commencé et que toutes les particules ont disparu
   if (hasStarted && !animationEnded && particleSystem.particles.length === 0) {
@@ -101,4 +127,3 @@ function update() {
 
 // Boucle d'animation
 run(update);
-
