@@ -60,6 +60,7 @@ export function createEngine() {
         input,
         finish,
         run,
-        math
+        math,
+        pixelRatio
     }
 }
