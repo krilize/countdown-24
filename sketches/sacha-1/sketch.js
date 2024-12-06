@@ -21,6 +21,7 @@ const explosionImage = new Image();
 explosionImage.src = "./image/blood.png";
 const cursorImage = new Image();
 cursorImage.src = "./image/seringue/seringue-1.png";
+const clickSound = new Audio('./image/heart-beat.mp3'); // Remplacez par le chemin de votre fichier son
 
 // Variables générales
 let cursorX = 0;
@@ -174,8 +175,18 @@ canvas.addEventListener("mousemove", (e) => {
 
 canvas.addEventListener("mousedown", () => {
   isMouseDown = true;
+    // Réinitialiser le son et le jouer
+    clickSound.currentTime = 0; // Revenir au début du fichier audio
+    clickSound.play().catch((err) => {
+      console.error("Erreur lors de la lecture du son :", err);
+    });
 });
 
 canvas.addEventListener("mouseup", () => {
   isMouseDown = false;
+    // Réinitialiser le son et le jouer
+    clickSound.currentTime = 0; // Revenir au début du fichier audio
+    clickSound.pause().catch((err) => {
+      console.error("Erreur lors de la lecture du son :", err);
+    });
 });

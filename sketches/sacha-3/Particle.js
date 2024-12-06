@@ -17,10 +17,10 @@ export default class Particle {
     this.gravity = { x: 0, y: 0.1 }; // Force de gravité
 
     // Propriétés de la particule
-    this.radius = Math.random( - 0.5) * 7;
+    this.radius = Math.random( - 0.5) * 12;
     this.maxSpeed = 3;
-    this.maxForce = 0.1;
-    this.slowDownDistance = 50;
+    this.maxForce = 0.2;
+    this.slowDownDistance = 20;
 
     // Gestion de l'état de la particule
     this.isAtTarget = false;

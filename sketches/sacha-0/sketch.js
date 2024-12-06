@@ -9,6 +9,7 @@ run(update);
 // Variables globales
 let knife1Image, knife2Image, knife3Image; // Images des couteaux
 let currentKnifeState = 1; // 1: knife-1.png, 2: knife-2.png, 3: knife-3.png
+const clickSound = new Audio('./image/stab.mp3'); 
 
 
 let pathPoints = [];
@@ -118,6 +119,10 @@ canvas.addEventListener("mousedown", (event) => {
     liquidLevel -= 0.05; // Ajustez la valeur pour la vitesse de réduction
     if (liquidLevel < 0) liquidLevel = 0; // Limiter à 0
   }
+  clickSound.currentTime = 0; // Revenir au début du fichier audio
+  clickSound.play().catch((err) => {
+    console.error("Erreur lors de la lecture du son :", err);
+  });
 });
 
 
